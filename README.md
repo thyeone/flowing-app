@@ -1,79 +1,35 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+RN과 Webview 환경을 구축하면서 부딪혔던 문제들을 기록합니다. 지속적으로 업데이트 될 예정입니다.
 
-# Getting Started
+## Trouble Shooting
 
->**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
+### iOS Webview uri를 로컬호스트로 설정했을 때 발생하는 문제
+#### 문제 상황
+react-native-webview source에 `http://localhost:3000`을 연결하여 시뮬레이터를 띄우는 데는 문제가 없으나, http 환경에서 통신할 때 **에러**를 반환했다.
+SSR로 페칭하는 상황에서는 정상적으로 데이터를 가져오는데 성공하나, CSR로 페칭하는 상황은 모두 에러가 발생했다.
+이를 통해서 유추할 수 있는 사실은 이미 백엔드에서 오리진을 뚫어줬기 때문에 CORS는 아니지만, 유사한 무언가의 **정책**이 막고 있다고 생각했다.
 
-## Step 1: Start the Metro Server
+iOS 자체의 내부 보안 정책 **ATS**(App Transport Security)때문에 http 컨텐츠의 로드를 막고 있던 것이였다.
 
-First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
+#### 해결 방법
+1. Xcode에서 `ios/info.plist` 파일을 연다.
+2. 두 가지 항목을 추가한 후 YES로 설정한다.
 
-To start Metro, run the following command from the _root_ of your React Native project:
+<img width="772" alt="Untitled" src="https://github.com/thyeone/flowing-app/assets/48711263/ece99acf-db62-44e0-988c-003feea38ea1">
 
-```bash
-# using npm
-npm start
+3. `cd ios && pod deintegrate && pod install`를 통해 새로 빌드한다.
 
-# OR using Yarn
-yarn start
+### Android Webview 로컬 설정 과정
+
+#### 문제 상황
+Android 환경에서 Webview로 로컬호스트를 띄우질 못한다. (하지만, http://IP주소:port 는 가능..)
+
+#### 해결 방법
+1. `android/app/src/main/res/AndroidManifest.xml` 파일에 간다. 다음과 같이 수정한다.
+
+``` xml
+<application 
+ ...
+ android:usesCleartextTraffic="true"
+ />
 ```
-
-## Step 2: Start your Application
-
-Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
-
-### For Android
-
-```bash
-# using npm
-npm run android
-
-# OR using Yarn
-yarn android
-```
-
-### For iOS
-
-```bash
-# using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
-
-This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
-
-## Step 3: Modifying your App
-
-Now that you have successfully run the app, let's modify it.
-
-1. Open `App.tsx` in your text editor of choice and edit some lines.
-2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
-
-   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [Introduction to React Native](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you can't get this to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+2. 터미널에서 `adb reverse tcp:3000 tcp:3000` 명령어를 실행한다.
